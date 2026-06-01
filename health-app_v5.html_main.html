@@ -1,0 +1,1676 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>健康生活 - 移动端原型</title>
+<!-- Tailwind CSS -->
+<script src="https://modao.cc/agent-py/static/source/js/tailwindcss.js"></script>
+<!-- Iconify -->
+<script src="https://modao.cc/agent-py/static/source/js/iconify-icon.min.js"></script>
+<!-- ECharts -->
+<script src="https://modao.cc/agent-py/static/source/js/echarts.min.js"></script>
+<style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .phone-container {
+            width: 375px;
+            height: 812px;
+            background-color: #F5F7FA;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            border-radius: 40px;
+            border: 8px solid #2d3436;
+        }
+
+        .content-area {
+            height: calc(812px - 84px);
+            overflow-y: auto;
+            padding-bottom: 20px;
+            scroll-behavior: smooth;
+        }
+
+        .content-area::-webkit-scrollbar { display: none; }
+
+        .tab-active { color: #4ECDC4; }
+
+        .linear-border { border: 1px solid #E8ECF0; }
+
+        .page-node { display: none; }
+        .page-node.active { display: block; }
+
+        .calendar-dot {
+            width: 5px; height: 5px;
+            background-color: #4ECDC4;
+            border-radius: 50%;
+            margin: 1px auto 0;
+        }
+
+        /* 动画 */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        @keyframes scaleIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        .animate-fade-in { animation: fadeIn 0.35s ease-out; }
+        .animate-slide-up { animation: slideUp 0.4s ease-out; }
+        .animate-pulse-slow { animation: pulse 1.5s ease-in-out infinite; }
+        .animate-scale-in { animation: scaleIn 0.3s ease-out; }
+
+        /* 卡片悬停效果 */
+        .card-hover { transition: all 0.2s ease; }
+        .card-hover:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+
+        /* 自定义 checkbox 样式 */
+        .check-item { transition: all 0.2s ease; }
+        .check-item:active { transform: scale(0.98); }
+
+        /* 模态背景遮罩 */
+        .modal-overlay {
+            position: fixed; inset: 0; z-index: 60;
+            background: rgba(0,0,0,0.3);
+            display: none;
+            animation: fadeIn 0.2s ease-out;
+        }
+        .modal-overlay.active { display: block; }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* 社区 - 分类胶囊选中 */
+        .category-chip { transition: all 0.2s ease; }
+        .category-chip.active { background-color: #4ECDC4; color: #fff; border-color: #4ECDC4; }
+
+        /* 社区 - 动态卡片动画 */
+        .feed-card { animation: fadeIn 0.4s ease-out both; }
+        .feed-card:nth-child(1) { animation-delay: 0.05s; }
+        .feed-card:nth-child(2) { animation-delay: 0.10s; }
+        .feed-card:nth-child(3) { animation-delay: 0.15s; }
+        .feed-card:nth-child(4) { animation-delay: 0.20s; }
+        .feed-card:nth-child(5) { animation-delay: 0.25s; }
+        .feed-card:nth-child(6) { animation-delay: 0.30s; }
+        .feed-card:nth-child(7) { animation-delay: 0.35s; }
+        .feed-card:nth-child(8) { animation-delay: 0.40s; }
+        .feed-card:nth-child(9) { animation-delay: 0.45s; }
+        .feed-card:nth-child(10) { animation-delay: 0.50s; }
+
+        /* 社区 - 点赞动画 */
+        @keyframes likePop { 0% { transform: scale(1); } 50% { transform: scale(1.35); } 100% { transform: scale(1); } }
+        .like-anim { animation: likePop 0.3s ease-out; }
+
+        /* 社区 - 图片占位 */
+        .feed-img-placeholder {
+            background: linear-gradient(135deg, #e8ecf0 0%, #f0f2f5 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #b0b8c1;
+            font-size: 10px;
+            font-weight: 500;
+        }
+
+        /* 模态框动画 */
+        .modal-enter { animation: scaleIn 0.25s ease-out; }
+        .modal-exit { animation: fadeIn 0.2s ease-out reverse; }
+    </style>
+</head>
+<body>
+<div class="phone-container">
+<!-- 顶部状态栏模拟 -->
+<div class="h-10 flex justify-between items-center px-8 pt-4 text-xs font-medium text-gray-500">
+<span>09:41</span>
+<div class="flex gap-1.5">
+<iconify-icon icon="mingcute:signal-fill"></iconify-icon>
+<iconify-icon icon="mingcute:wifi-line"></iconify-icon>
+<iconify-icon icon="mingcute:battery-fill"></iconify-icon>
+</div>
+</div>
+<!-- 主内容区 -->
+<div class="content-area" id="main-content">
+<!-- ==================== 1. 首页 ==================== -->
+<div class="page-node active animate-fade-in" id="page-home">
+<header class="px-6 py-4 flex justify-between items-center bg-white">
+<h1 class="text-xl font-semibold text-[#2D3436]">健康生活</h1>
+<div class="w-9 h-9 rounded-full linear-border overflow-hidden shadow-sm">
+<img alt="User Avatar" class="w-full h-full object-cover" src="https://modao.cc/agent-py/media/generated_images/2026-06-01/e45f16345ac947f4b9ca20fcf52a3263.jpg"/>
+</div>
+</header>
+<div class="px-6 mt-4">
+<!-- 今日概览卡片 -->
+<div class="bg-white p-5 rounded-xl linear-border card-hover shadow-sm">
+<div class="flex justify-between items-start mb-3">
+<div>
+<p class="text-xs text-gray-400 font-medium">6月1日 星期一</p>
+<p class="text-base font-medium text-[#2D3436] mt-1">今天也要元气满满哦 🌟</p>
+</div>
+<div class="text-right">
+<p class="text-2xl font-light text-[#4ECDC4]">26°</p>
+<p class="text-[10px] text-gray-400">北京 · 晴</p>
+</div>
+</div>
+<div class="h-[1px] bg-[#E8ECF0] w-full mb-3"></div>
+<p class="text-xs text-gray-400 leading-relaxed italic">"健康不是目的，而是生活的手段。"</p>
+</div>
+<!-- 快速入口 -->
+<div class="grid grid-cols-3 gap-4 mt-5">
+<button class="flex flex-col items-center gap-2 group" onclick="switchPage('checkin')">
+<div class="w-14 h-14 flex items-center justify-center rounded-xl linear-border bg-white text-[#4ECDC4] group-hover:bg-[#E8F8F5] group-hover:border-[#4ECDC4] transition-all duration-200 shadow-sm">
+<iconify-icon icon="ph:calendar-check-light" width="26"></iconify-icon>
+</div>
+<span class="text-xs text-gray-500 font-medium">今日打卡</span>
+</button>
+<button class="flex flex-col items-center gap-2 group" onclick="switchPage('nutrition')">
+<div class="w-14 h-14 flex items-center justify-center rounded-xl linear-border bg-white text-[#4ECDC4] group-hover:bg-[#E8F8F5] group-hover:border-[#4ECDC4] transition-all duration-200 shadow-sm">
+<iconify-icon icon="ph:camera-light" width="26"></iconify-icon>
+</div>
+<span class="text-xs text-gray-500 font-medium">拍照识菜</span>
+</button>
+<button class="flex flex-col items-center gap-2 group" onclick="switchPage('recipes')">
+<div class="w-14 h-14 flex items-center justify-center rounded-xl linear-border bg-white text-[#4ECDC4] group-hover:bg-[#E8F8F5] group-hover:border-[#4ECDC4] transition-all duration-200 shadow-sm">
+<iconify-icon icon="ph:cooking-pot-light" width="26"></iconify-icon>
+</div>
+<span class="text-xs text-gray-500 font-medium">推荐食谱</span>
+</button>
+</div>
+<!-- 今日打卡进度 - 细化版 -->
+<div class="mt-6">
+<div class="flex justify-between items-end mb-4">
+<h2 class="text-sm font-semibold text-[#2D3436]">今日打卡进度</h2>
+<span class="text-[10px] text-[#4ECDC4] bg-[#E8F8F5] px-2 py-0.5 rounded-full font-medium">已完成 5/7</span>
+</div>
+<div class="bg-white rounded-xl linear-border p-4 shadow-sm space-y-3">
+<div class="flex items-center gap-3">
+<div class="w-5 h-5 rounded-full bg-[#4ECDC4] flex items-center justify-center flex-shrink-0">
+<iconify-icon class="text-white" icon="ph:check-bold" width="12"></iconify-icon>
+</div>
+<span class="text-[10px] text-gray-400 w-12">早餐</span>
+<div class="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+<div class="h-full bg-[#4ECDC4] w-[100%] rounded-full"></div>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-5 h-5 rounded-full bg-[#4ECDC4] flex items-center justify-center flex-shrink-0">
+<iconify-icon class="text-white" icon="ph:check-bold" width="12"></iconify-icon>
+</div>
+<span class="text-[10px] text-gray-400 w-12">午餐</span>
+<div class="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+<div class="h-full bg-[#4ECDC4] w-[100%] rounded-full"></div>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-5 h-5 rounded-full border-2 border-gray-200 flex-shrink-0"></div>
+<span class="text-[10px] text-gray-400 w-12">晚餐</span>
+<div class="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+<div class="h-full bg-[#4ECDC4] w-[0%] rounded-full"></div>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-5 h-5 rounded-full bg-[#4ECDC4] flex items-center justify-center flex-shrink-0">
+<iconify-icon class="text-white" icon="ph:check-bold" width="12"></iconify-icon>
+</div>
+<span class="text-[10px] text-gray-400 w-12">运动</span>
+<div class="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+<div class="h-full bg-[#4ECDC4] w-[60%] rounded-full"></div>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-5 h-5 rounded-full border-2 border-gray-200 flex-shrink-0"></div>
+<span class="text-[10px] text-gray-400 w-12">饮水</span>
+<div class="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+<div class="h-full bg-[#4ECDC4] w-[70%] rounded-full"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- 推荐内容 -->
+<div class="mt-6 mb-6">
+<h2 class="text-sm font-semibold text-[#2D3436] mb-4">为您推荐</h2>
+<div class="rounded-xl overflow-hidden linear-border bg-white card-hover shadow-sm">
+<img alt="Recommended article about summer fitness" class="w-full h-32 object-cover" src="https://modao.cc/agent-py/media/generated_images/2026-06-01/c343e02b00774a18a161a87925b73c1a.jpg"/>
+<div class="p-4">
+<h3 class="text-sm font-medium text-[#2D3436]">夏日减脂：5个简单高效的居家运动</h3>
+<p class="text-[10px] text-gray-400 mt-1 flex items-center gap-3">
+<span><iconify-icon class="inline" icon="ph:eye-light" width="12"></iconify-icon> 1.2k</span>
+<span><iconify-icon class="inline" icon="ph:heart-light" width="12"></iconify-icon> 收藏 45</span>
+</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- ==================== 2. 健康打卡页 ==================== -->
+<div class="page-node animate-fade-in" id="page-checkin">
+<header class="px-6 py-4 bg-white sticky top-0 z-10 border-b border-[#E8ECF0]">
+<h1 class="text-xl font-semibold text-[#2D3436]">健康打卡</h1>
+</header>
+<div class="px-6 py-4">
+<!-- 打卡统计卡片 -->
+<div class="bg-white p-4 rounded-xl linear-border shadow-sm mb-5">
+<div class="flex items-center justify-around">
+<div class="text-center">
+<p class="text-xl font-bold text-[#4ECDC4]">7</p>
+<p class="text-[10px] text-gray-400 mt-0.5">连续打卡(天)</p>
+</div>
+<div class="w-[1px] h-10 bg-[#E8ECF0]"></div>
+<div class="text-center">
+<p class="text-xl font-bold text-[#4ECDC4]">82%</p>
+<p class="text-[10px] text-gray-400 mt-0.5">总完成率</p>
+</div>
+<div class="w-[1px] h-10 bg-[#E8ECF0]"></div>
+<div class="text-center">
+<p class="text-xl font-bold text-[#4ECDC4]">28</p>
+<p class="text-[10px] text-gray-400 mt-0.5">累计打卡(天)</p>
+</div>
+</div>
+</div>
+<!-- 日历视图打卡查询 -->
+<div class="bg-white p-4 rounded-xl linear-border shadow-sm mb-5">
+<div class="flex justify-between items-center mb-3 px-1">
+<span class="text-sm font-medium text-[#2D3436]">2026年6月</span>
+<div class="flex gap-3">
+<button class="w-6 h-6 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors">
+<iconify-icon class="text-gray-400" icon="ph:caret-left"></iconify-icon>
+</button>
+<button class="w-6 h-6 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors">
+<iconify-icon class="text-gray-400" icon="ph:caret-right"></iconify-icon>
+</button>
+</div>
+</div>
+<div class="grid grid-cols-7 text-center text-[10px] text-gray-400 mb-2 font-medium">
+<span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+</div>
+<div class="grid grid-cols-7 text-center gap-y-2">
+<div class="text-xs text-gray-300 py-1">31</div>
+<div class="text-xs text-[#2D3436] font-medium py-1 relative cursor-pointer hover:bg-[#E8F8F5] rounded transition-colors" onclick="showDateDetail(1)">1<div class="calendar-dot"></div></div>
+<div class="text-xs text-[#2D3436] py-1 relative cursor-pointer hover:bg-[#E8F8F5] rounded transition-colors" onclick="showDateDetail(2)">2<div class="calendar-dot"></div></div>
+<div class="text-xs text-[#2D3436] py-1 cursor-pointer hover:bg-[#E8F8F5] rounded transition-colors" onclick="showDateDetail(3)">3</div>
+<div class="text-xs text-[#2D3436] py-1 relative cursor-pointer hover:bg-[#E8F8F5] rounded transition-colors" onclick="showDateDetail(4)">4<div class="calendar-dot"></div></div>
+<div class="text-xs text-[#2D3436] py-1 cursor-pointer hover:bg-[#E8F8F5] rounded transition-colors" onclick="showDateDetail(5)">5</div>
+<div class="text-xs text-[#2D3436] py-1 relative cursor-pointer hover:bg-[#E8F8F5] rounded transition-colors" onclick="showDateDetail(6)">6<div class="calendar-dot"></div></div>
+<div class="text-xs text-gray-300 py-1">7</div>
+<div class="text-xs text-[#2D3436] py-1 cursor-pointer hover:bg-[#E8F8F5] rounded transition-colors" onclick="showDateDetail(8)">8</div>
+<div class="text-xs text-[#2D3436] py-1 cursor-pointer hover:bg-[#E8F8F5] rounded transition-colors" onclick="showDateDetail(9)">9</div>
+<div class="text-xs text-[#2D3436] py-1 relative cursor-pointer hover:bg-[#E8F8F5] rounded transition-colors" onclick="showDateDetail(10)">10<div class="calendar-dot"></div></div>
+<div class="text-xs text-[#2D3436] py-1 cursor-pointer hover:bg-[#E8F8F5] rounded transition-colors" onclick="showDateDetail(11)">11</div>
+<div class="text-xs text-[#2D3436] py-1 cursor-pointer hover:bg-[#E8F8F5] rounded transition-colors" onclick="showDateDetail(12)">12</div>
+<div class="text-xs text-[#2D3436] py-1 relative cursor-pointer hover:bg-[#E8F8F5] rounded transition-colors" onclick="showDateDetail(13)">13<div class="calendar-dot"></div></div>
+<div class="text-xs text-[#2D3436] py-1 cursor-pointer hover:bg-[#E8F8F5] rounded transition-colors" onclick="showDateDetail(14)">14</div>
+<div class="text-xs text-[#2D3436] py-1 cursor-pointer hover:bg-[#E8F8F5] rounded transition-colors" onclick="showDateDetail(15)">15</div>
+<div class="text-xs text-[#2D3436] py-1 relative cursor-pointer hover:bg-[#E8F8F5] rounded transition-colors" onclick="showDateDetail(16)">16<div class="calendar-dot"></div></div>
+<div class="text-xs text-[#2D3436] py-1 cursor-pointer hover:bg-[#E8F8F5] rounded transition-colors" onclick="showDateDetail(17)">17</div>
+<div class="text-xs text-[#2D3436] py-1 cursor-pointer hover:bg-[#E8F8F5] rounded transition-colors" onclick="showDateDetail(18)">18</div>
+<div class="text-xs text-[#2D3436] py-1 cursor-pointer hover:bg-[#E8F8F5] rounded transition-colors" onclick="showDateDetail(19)">19</div>
+<div class="text-xs text-[#2D3436] py-1 relative cursor-pointer hover:bg-[#E8F8F5] rounded transition-colors" onclick="showDateDetail(20)">20<div class="calendar-dot"></div></div>
+<div class="text-xs text-[#2D3436] py-1 cursor-pointer hover:bg-[#E8F8F5] rounded transition-colors" onclick="showDateDetail(21)">21</div>
+<div class="text-xs text-[#2D3436] py-1 cursor-pointer hover:bg-[#E8F8F5] rounded transition-colors" onclick="showDateDetail(22)">22</div>
+<div class="text-xs text-[#2D3436] py-1 cursor-pointer hover:bg-[#E8F8F5] rounded transition-colors" onclick="showDateDetail(23)">23</div>
+<div class="text-xs text-[#2D3436] py-1 cursor-pointer hover:bg-[#E8F8F5] rounded transition-colors" onclick="showDateDetail(24)">24</div>
+<div class="text-xs text-[#2D3436] py-1 cursor-pointer hover:bg-[#E8F8F5] rounded transition-colors" onclick="showDateDetail(25)">25</div>
+<div class="text-xs text-[#2D3436] py-1 cursor-pointer hover:bg-[#E8F8F5] rounded transition-colors" onclick="showDateDetail(26)">26</div>
+<div class="text-xs text-[#2D3436] py-1 cursor-pointer hover:bg-[#E8F8F5] rounded transition-colors" onclick="showDateDetail(27)">27</div>
+<div class="text-xs text-[#2D3436] py-1 cursor-pointer hover:bg-[#E8F8F5] rounded transition-colors" onclick="showDateDetail(28)">28</div>
+<div class="text-xs text-[#2D3436] py-1 cursor-pointer hover:bg-[#E8F8F5] rounded transition-colors" onclick="showDateDetail(29)">29</div>
+<div class="text-xs text-[#2D3436] py-1 cursor-pointer hover:bg-[#E8F8F5] rounded transition-colors" onclick="showDateDetail(30)">30</div>
+</div>
+<!-- 日期详情弹出 -->
+<div class="mt-3 pt-3 border-t border-[#E8ECF0] text-center text-xs text-gray-400 hidden" id="date-detail">
+        点击日历日期查看当天打卡详情
+      </div>
+</div>
+<!-- 每日打卡记录 - 完整列表 -->
+<h2 class="text-sm font-semibold text-[#2D3436] mb-3">今日打卡项目</h2>
+<div class="space-y-2.5">
+<div class="flex items-center justify-between p-3.5 bg-white rounded-xl linear-border shadow-sm check-item">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-[#E8F8F5] flex items-center justify-center text-[#4ECDC4]">
+<iconify-icon icon="ph:coffee-light"></iconify-icon>
+</div>
+<span class="text-sm text-[#2D3436]">早餐打卡</span>
+</div>
+<input checked="" class="w-5 h-5 rounded accent-[#4ECDC4] border-gray-300 text-[#4ECDC4] focus:ring-[#4ECDC4] cursor-pointer" type="checkbox"/>
+</div>
+<div class="flex items-center justify-between p-3.5 bg-white rounded-xl linear-border shadow-sm check-item">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-[#E8F8F5] flex items-center justify-center text-[#4ECDC4]">
+<iconify-icon icon="ph:bowl-food-light"></iconify-icon>
+</div>
+<span class="text-sm text-[#2D3436]">午餐打卡</span>
+</div>
+<input checked="" class="w-5 h-5 rounded accent-[#4ECDC4] border-gray-300 text-[#4ECDC4] focus:ring-[#4ECDC4] cursor-pointer" type="checkbox"/>
+</div>
+<div class="flex items-center justify-between p-3.5 bg-white rounded-xl linear-border shadow-sm check-item">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-[#E8F8F5] flex items-center justify-center text-[#4ECDC4]">
+<iconify-icon icon="ph:moon-light"></iconify-icon>
+</div>
+<span class="text-sm text-[#2D3436]">晚餐打卡</span>
+</div>
+<input class="w-5 h-5 rounded accent-[#4ECDC4] border-gray-300 text-[#4ECDC4] focus:ring-[#4ECDC4] cursor-pointer" type="checkbox"/>
+</div>
+<div class="flex items-center justify-between p-3.5 bg-white rounded-xl linear-border shadow-sm check-item">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-[#E8F8F5] flex items-center justify-center text-[#4ECDC4]">
+<iconify-icon icon="ph:barbell-light"></iconify-icon>
+</div>
+<span class="text-sm text-[#2D3436]">运动 30分钟</span>
+</div>
+<input class="w-5 h-5 rounded accent-[#4ECDC4] border-gray-300 text-[#4ECDC4] focus:ring-[#4ECDC4] cursor-pointer" type="checkbox"/>
+</div>
+<div class="flex items-center justify-between p-3.5 bg-white rounded-xl linear-border shadow-sm check-item">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-[#E8F8F5] flex items-center justify-center text-[#4ECDC4]">
+<iconify-icon icon="ph:bed-light"></iconify-icon>
+</div>
+<span class="text-sm text-[#2D3436]">早睡 23:00前</span>
+</div>
+<input checked="" class="w-5 h-5 rounded accent-[#4ECDC4] border-gray-300 text-[#4ECDC4] focus:ring-[#4ECDC4] cursor-pointer" type="checkbox"/>
+</div>
+<div class="flex items-center justify-between p-3.5 bg-white rounded-xl linear-border shadow-sm check-item">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-[#E8F8F5] flex items-center justify-center text-[#4ECDC4]">
+<iconify-icon icon="ph:drop-light"></iconify-icon>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-sm text-[#2D3436]">饮水</span>
+<span class="text-[10px] text-gray-400">1200/2000ml</span>
+</div>
+</div>
+<div class="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+<div class="h-full bg-[#4ECDC4] w-[60%] rounded-full"></div>
+</div>
+</div>
+<div class="flex items-center justify-between p-3.5 bg-white rounded-xl linear-border shadow-sm check-item">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-[#E8F8F5] flex items-center justify-center text-[#4ECDC4]">
+<iconify-icon icon="ph:smiley-light"></iconify-icon>
+</div>
+<span class="text-sm text-[#2D3436]">心情</span>
+</div>
+<div class="flex gap-2">
+<span class="text-base cursor-pointer hover:scale-125 transition-transform">😊</span>
+<span class="text-base cursor-pointer hover:scale-125 transition-transform">😌</span>
+<span class="text-base cursor-pointer opacity-40 hover:opacity-100 transition-opacity">😐</span>
+<span class="text-base cursor-pointer opacity-40 hover:opacity-100 transition-opacity">😢</span>
+</div>
+</div>
+</div>
+<!-- 打卡数据统计与趋势展示 -->
+<div class="mt-6 mb-6">
+<div class="flex justify-between items-center mb-3">
+<h2 class="text-sm font-semibold text-[#2D3436]">近7天打卡趋势</h2>
+<span class="text-[10px] text-gray-400">完成率 71%</span>
+</div>
+<div class="w-full h-44 bg-white rounded-xl linear-border shadow-sm" id="checkin-chart"></div>
+</div>
+</div>
+</div>
+<!-- ==================== 3. 营养管理页 ==================== -->
+<div class="page-node animate-fade-in" id="page-nutrition">
+<header class="px-6 py-4 bg-white sticky top-0 z-10 border-b border-[#E8ECF0]">
+<h1 class="text-xl font-semibold text-[#2D3436]">营养管理</h1>
+</header>
+<div class="px-6 py-4">
+<!-- 热量目标与实时统计 -->
+<div class="bg-white p-5 rounded-xl linear-border shadow-sm mb-5">
+<div class="flex justify-between items-center mb-4">
+<div>
+<p class="text-[10px] text-gray-400 uppercase tracking-wider">今日热量目标</p>
+<p class="text-2xl font-bold text-[#2D3436] mt-0.5">1,240 <span class="text-sm font-normal text-gray-400">/ 1,800 kcal</span></p>
+</div>
+<div class="w-14 h-14">
+<div class="w-full h-full" id="calories-gauge"></div>
+</div>
+</div>
+<div class="grid grid-cols-3 gap-4">
+<div class="bg-[#E8F8F5] rounded-lg p-3 text-center">
+<p class="text-[10px] text-gray-400">已摄入</p>
+<p class="text-base font-semibold text-[#4ECDC4]">1,240</p>
+<p class="text-[9px] text-gray-400">kcal</p>
+</div>
+<div class="bg-[#FFF3E0] rounded-lg p-3 text-center">
+<p class="text-[10px] text-gray-400">已消耗</p>
+<p class="text-base font-semibold text-[#FF9800]">320</p>
+<p class="text-[9px] text-gray-400">kcal</p>
+</div>
+<div class="bg-[#E3F2FD] rounded-lg p-3 text-center">
+<p class="text-[10px] text-gray-400">剩余</p>
+<p class="text-base font-semibold text-[#42A5F5]">560</p>
+<p class="text-[9px] text-gray-400">kcal</p>
+</div>
+</div>
+</div>
+<!-- 拍照/图片上传识菜 + 手动录入 -->
+<div class="flex gap-4 mb-5">
+<button class="flex-1 flex flex-col items-center justify-center p-5 bg-white rounded-xl linear-border shadow-sm card-hover group" onclick="simulateCamera()">
+<div class="w-12 h-12 rounded-full bg-[#E8F8F5] flex items-center justify-center text-[#4ECDC4] group-hover:bg-[#4ECDC4] group-hover:text-white transition-all duration-300 mb-2">
+<iconify-icon icon="ph:camera-light" width="28"></iconify-icon>
+</div>
+<span class="text-sm font-medium text-gray-600 group-hover:text-[#4ECDC4] transition-colors">拍照识菜</span>
+<span class="text-[9px] text-gray-400 mt-0.5">YOLOv8 AI识别</span>
+</button>
+<button class="flex-1 flex flex-col items-center justify-center p-5 bg-white rounded-xl linear-border shadow-sm card-hover group" onclick="showManualForm()">
+<div class="w-12 h-12 rounded-full bg-[#FFF3E0] flex items-center justify-center text-[#FF9800] group-hover:bg-[#FF9800] group-hover:text-white transition-all duration-300 mb-2">
+<iconify-icon icon="ph:keyboard-light" width="28"></iconify-icon>
+</div>
+<span class="text-sm font-medium text-gray-600 group-hover:text-[#FF9800] transition-colors">手动录入</span>
+<span class="text-[9px] text-gray-400 mt-0.5">添加饮食记录</span>
+</button>
+</div>
+<!-- AI识别过渡状态 -->
+<div class="hidden bg-white rounded-xl linear-border shadow-sm p-6 text-center mb-5 animate-scale-in" id="camera-scanning">
+<div class="w-16 h-16 mx-auto rounded-full bg-[#E8F8F5] flex items-center justify-center text-[#4ECDC4] animate-pulse-slow mb-3">
+<iconify-icon icon="ph:scan-light" width="32"></iconify-icon>
+</div>
+<p class="text-sm font-medium text-[#2D3436]">拍照识别中...</p>
+<p class="text-[10px] text-gray-400 mt-1">正在通过YOLOv8模型分析菜品</p>
+</div>
+<!-- AI识别与营养计算展示 -->
+<div class="hidden bg-white rounded-xl linear-border shadow-sm p-4 mb-5 animate-scale-in" id="ai-result">
+<div class="flex gap-4 mb-4">
+<div class="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 bg-[#E8F8F5]">
+<img alt="AI recognized food: pan-seared chicken breast salad" class="w-full h-full object-cover" src="https://modao.cc/agent-py/media/generated_images/2026-06-01/6ba212dbbe334a889922a367d206640b.jpg"/>
+</div>
+<div class="flex-1">
+<div class="flex items-center gap-2">
+<h3 class="text-sm font-medium text-[#2D3436]">香煎鸡胸肉沙拉</h3>
+<span class="text-[9px] px-1.5 py-0.5 bg-[#4ECDC4] text-white rounded font-medium">AI识别</span>
+</div>
+<p class="text-xs text-gray-400 mt-1">识别置信度 97.3%</p>
+<p class="text-xs text-gray-500 mt-1">热量 <span class="font-semibold text-[#FF9800]">320 kcal</span></p>
+</div>
+</div>
+<div class="grid grid-cols-3 gap-3">
+<div class="bg-[#E8F8F5] rounded-lg p-3 text-center">
+<p class="text-[9px] text-gray-400">蛋白质</p>
+<p class="text-sm font-semibold text-[#4ECDC4]">28g</p>
+</div>
+<div class="bg-[#FFF3E0] rounded-lg p-3 text-center">
+<p class="text-[9px] text-gray-400">碳水</p>
+<p class="text-sm font-semibold text-[#FF9800]">12g</p>
+</div>
+<div class="bg-[#FFEBEE] rounded-lg p-3 text-center">
+<p class="text-[9px] text-gray-400">脂肪</p>
+<p class="text-sm font-semibold text-[#EF5350]">8g</p>
+</div>
+</div>
+</div>
+<!-- 手动饮食记录录入 - 表单 -->
+<div class="hidden bg-white rounded-xl linear-border shadow-sm p-5 mb-5 animate-scale-in" id="manual-form">
+<div class="flex justify-between items-center mb-4">
+<h3 class="text-sm font-semibold text-[#2D3436]">手动录入饮食</h3>
+<button class="text-gray-400 hover:text-gray-600 transition-colors" onclick="hideManualForm()">
+<iconify-icon icon="ph:x-light" width="20"></iconify-icon>
+</button>
+</div>
+<div class="space-y-3.5">
+<div>
+<label class="text-[10px] text-gray-400 font-medium">食物名称</label>
+<input class="w-full mt-1 px-3 py-2 rounded-lg linear-border text-sm focus:outline-none focus:border-[#4ECDC4] focus:ring-1 focus:ring-[#4ECDC4] transition-colors" id="food-name" placeholder="如：全麦面包" type="text"/>
+</div>
+<div class="grid grid-cols-2 gap-3">
+<div>
+<label class="text-[10px] text-gray-400 font-medium">份量</label>
+<input class="w-full mt-1 px-3 py-2 rounded-lg linear-border text-sm focus:outline-none focus:border-[#4ECDC4] focus:ring-1 focus:ring-[#4ECDC4] transition-colors" id="food-amount" placeholder="1 份" type="text"/>
+</div>
+<div>
+<label class="text-[10px] text-gray-400 font-medium">热量 (kcal)</label>
+<input class="w-full mt-1 px-3 py-2 rounded-lg linear-border text-sm focus:outline-none focus:border-[#4ECDC4] focus:ring-1 focus:ring-[#4ECDC4] transition-colors" id="food-calories" placeholder="200" type="number"/>
+</div>
+</div>
+<button class="w-full py-2.5 bg-[#4ECDC4] text-white text-sm font-medium rounded-lg hover:bg-[#45b8b0] transition-colors active:scale-[0.98]" onclick="submitFoodRecord()">提交记录</button>
+</div>
+</div>
+<!-- 最近识别记录列表 -->
+<h2 class="text-sm font-semibold text-[#2D3436] mb-3">饮食记录</h2>
+<div class="space-y-3" id="food-records">
+<div class="bg-white rounded-xl linear-border shadow-sm flex p-3 gap-4 card-hover">
+<div class="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-[#E8F8F5]">
+<img alt="Food record: avocado toast" class="w-full h-full object-cover" src="https://modao.cc/agent-py/media/generated_images/2026-06-01/d93c80f1410048139d7e58b62915ff01.jpg"/>
+</div>
+<div class="flex-1 py-0.5">
+<div class="flex justify-between items-start">
+<h3 class="text-sm font-medium text-[#2D3436]">牛油果全麦吐司</h3>
+<span class="text-[10px] px-2 py-0.5 bg-[#E8F8F5] text-[#4ECDC4] rounded font-medium">早餐</span>
+</div>
+<p class="text-xs text-gray-400 mt-0.5">热量: 245 kcal</p>
+<div class="flex gap-3 mt-1">
+<span class="text-[10px] text-gray-500">蛋 8g</span>
+<span class="text-[10px] text-gray-500">碳 22g</span>
+<span class="text-[10px] text-gray-500">脂 12g</span>
+</div>
+</div>
+</div>
+<div class="bg-white rounded-xl linear-border shadow-sm flex p-3 gap-4 card-hover">
+<div class="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-[#E8F8F5]">
+<img alt="Food record: quinoa shrimp salad" class="w-full h-full object-cover" src="https://modao.cc/agent-py/media/generated_images/2026-06-01/29a950f4fa944069aff956e3d594784a.jpg"/>
+</div>
+<div class="flex-1 py-0.5">
+<div class="flex justify-between items-start">
+<h3 class="text-sm font-medium text-[#2D3436]">黎麦鲜虾沙拉</h3>
+<span class="text-[10px] px-2 py-0.5 bg-[#FFF3E0] text-[#FF9800] rounded font-medium">午餐</span>
+</div>
+<p class="text-xs text-gray-400 mt-0.5">热量: 310 kcal</p>
+<div class="flex gap-3 mt-1">
+<span class="text-[10px] text-gray-500">蛋 24g</span>
+<span class="text-[10px] text-gray-500">碳 18g</span>
+<span class="text-[10px] text-gray-500">脂 6g</span>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-4 mb-6"></div>
+</div>
+</div>
+<!-- ==================== 4. 食谱推荐页 ==================== -->
+<div class="page-node animate-fade-in" id="page-recipes">
+<header class="px-6 py-4 bg-white sticky top-0 z-10 border-b border-[#E8ECF0]">
+<h1 class="text-xl font-semibold text-[#2D3436]">食谱推荐</h1>
+</header>
+<div class="px-6 pt-3">
+<!-- 食谱分类浏览 -->
+<div class="flex gap-2.5 overflow-x-auto pb-3 no-scrollbar">
+<span class="px-4 py-1.5 rounded-full text-xs bg-[#4ECDC4] text-white border border-[#4ECDC4] whitespace-nowrap font-medium cursor-pointer">全部</span>
+<span class="px-4 py-1.5 rounded-full text-xs bg-white text-gray-500 linear-border whitespace-nowrap cursor-pointer hover:border-[#4ECDC4] hover:text-[#4ECDC4] transition-colors">低卡</span>
+<span class="px-4 py-1.5 rounded-full text-xs bg-white text-gray-500 linear-border whitespace-nowrap cursor-pointer hover:border-[#4ECDC4] hover:text-[#4ECDC4] transition-colors">高蛋白</span>
+<span class="px-4 py-1.5 rounded-full text-xs bg-white text-gray-500 linear-border whitespace-nowrap cursor-pointer hover:border-[#4ECDC4] hover:text-[#4ECDC4] transition-colors">减脂</span>
+<span class="px-4 py-1.5 rounded-full text-xs bg-white text-gray-500 linear-border whitespace-nowrap cursor-pointer hover:border-[#4ECDC4] hover:text-[#4ECDC4] transition-colors">轻食</span>
+</div>
+<!-- 食谱列表 -->
+<div class="grid grid-cols-2 gap-4 mt-2">
+<div class="bg-white rounded-xl linear-border overflow-hidden shadow-sm card-hover cursor-pointer" onclick="showRecipeDetail('avocado')">
+<img alt="Recipe: avocado whole wheat toast" class="w-full h-32 object-cover" src="https://modao.cc/agent-py/media/generated_images/2026-06-01/838b62f347cb4c7b9bf025c3c10d6e9e.jpg"/>
+<div class="p-3">
+<h3 class="text-xs font-medium text-[#2D3436] truncate">牛油果全麦吐司</h3>
+<div class="flex items-center gap-1 mt-1">
+<iconify-icon class="text-orange-400 text-[10px]" icon="ph:fire-light"></iconify-icon>
+<span class="text-[10px] text-gray-400">245 kcal</span>
+</div>
+<div class="flex items-center gap-1 mt-1">
+<iconify-icon class="text-[#4ECDC4] text-[10px]" icon="ph:clock-light"></iconify-icon>
+<span class="text-[9px] text-gray-400">10分钟</span>
+</div>
+</div>
+</div>
+<div class="bg-white rounded-xl linear-border overflow-hidden shadow-sm card-hover cursor-pointer" onclick="showRecipeDetail('shrimp')">
+<img alt="Recipe: quinoa shrimp salad" class="w-full h-32 object-cover" src="https://modao.cc/agent-py/media/generated_images/2026-06-01/ec725bf081e34cb48d29ded909901612.jpg"/>
+<div class="p-3">
+<h3 class="text-xs font-medium text-[#2D3436] truncate">黎麦鲜虾沙拉</h3>
+<div class="flex items-center gap-1 mt-1">
+<iconify-icon class="text-orange-400 text-[10px]" icon="ph:fire-light"></iconify-icon>
+<span class="text-[10px] text-gray-400">310 kcal</span>
+</div>
+<div class="flex items-center gap-1 mt-1">
+<iconify-icon class="text-[#4ECDC4] text-[10px]" icon="ph:clock-light"></iconify-icon>
+<span class="text-[9px] text-gray-400">15分钟</span>
+</div>
+</div>
+</div>
+<div class="bg-white rounded-xl linear-border overflow-hidden shadow-sm card-hover cursor-pointer" onclick="showRecipeDetail('salmon')">
+<img alt="Recipe: oil-free pan-seared salmon" class="w-full h-32 object-cover" src="https://modao.cc/agent-py/media/generated_images/2026-06-01/d7696306cdab4bc29aa7ebf82f96abaa.jpg"/>
+<div class="p-3">
+<h3 class="text-xs font-medium text-[#2D3436] truncate">无油香煎三文鱼</h3>
+<div class="flex items-center gap-1 mt-1">
+<iconify-icon class="text-orange-400 text-[10px]" icon="ph:fire-light"></iconify-icon>
+<span class="text-[10px] text-gray-400">280 kcal</span>
+</div>
+<div class="flex items-center gap-1 mt-1">
+<iconify-icon class="text-[#4ECDC4] text-[10px]" icon="ph:clock-light"></iconify-icon>
+<span class="text-[9px] text-gray-400">20分钟</span>
+</div>
+</div>
+</div>
+<div class="bg-white rounded-xl linear-border overflow-hidden shadow-sm card-hover cursor-pointer" onclick="showRecipeDetail('yogurt')">
+<img alt="Recipe: Greek yogurt fruit bowl" class="w-full h-32 object-cover" src="https://modao.cc/agent-py/media/generated_images/2026-06-01/c25e0d186f0f4a718bea4fc0075265ba.jpg"/>
+<div class="p-3">
+<h3 class="text-xs font-medium text-[#2D3436] truncate">希腊酸奶水果碗</h3>
+<div class="flex items-center gap-1 mt-1">
+<iconify-icon class="text-orange-400 text-[10px]" icon="ph:fire-light"></iconify-icon>
+<span class="text-[10px] text-gray-400">185 kcal</span>
+</div>
+<div class="flex items-center gap-1 mt-1">
+<iconify-icon class="text-[#4ECDC4] text-[10px]" icon="ph:clock-light"></iconify-icon>
+<span class="text-[9px] text-gray-400">5分钟</span>
+</div>
+</div>
+</div>
+<div class="bg-white rounded-xl linear-border overflow-hidden shadow-sm card-hover cursor-pointer" onclick="showRecipeDetail('oat')">
+<img alt="Recipe: oat blueberry muffin" class="w-full h-32 object-cover" src="https://modao.cc/agent-py/media/generated_images/2026-06-01/bbcd2d7fd4ca4c4b9944b391f50de0cc.jpg"/>
+<div class="p-3">
+<h3 class="text-xs font-medium text-[#2D3436] truncate">燕麦蓝莓松饼</h3>
+<div class="flex items-center gap-1 mt-1">
+<iconify-icon class="text-orange-400 text-[10px]" icon="ph:fire-light"></iconify-icon>
+<span class="text-[10px] text-gray-400">220 kcal</span>
+</div>
+<div class="flex items-center gap-1 mt-1">
+<iconify-icon class="text-[#4ECDC4] text-[10px]" icon="ph:clock-light"></iconify-icon>
+<span class="text-[9px] text-gray-400">25分钟</span>
+</div>
+</div>
+</div>
+<div class="bg-white rounded-xl linear-border overflow-hidden shadow-sm card-hover cursor-pointer" onclick="showRecipeDetail('papaya')">
+<img alt="Recipe: Thai green papaya salad" class="w-full h-32 object-cover" src="https://modao.cc/agent-py/media/generated_images/2026-06-01/46ab97b041414a34aa5bf80015de23b3.jpg"/>
+<div class="p-3">
+<h3 class="text-xs font-medium text-[#2D3436] truncate">泰式青木瓜沙拉</h3>
+<div class="flex items-center gap-1 mt-1">
+<iconify-icon class="text-orange-400 text-[10px]" icon="ph:fire-light"></iconify-icon>
+<span class="text-[10px] text-gray-400">120 kcal</span>
+</div>
+<div class="flex items-center gap-1 mt-1">
+<iconify-icon class="text-[#4ECDC4] text-[10px]" icon="ph:clock-light"></iconify-icon>
+<span class="text-[9px] text-gray-400">15分钟</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- ==================== 5. 我的页面 ==================== -->
+<div class="page-node animate-fade-in" id="page-profile">
+<!-- 渐变背景横幅 -->
+<div style="background: linear-gradient(135deg, #4ECDC4, #44B09E); height: 110px;"></div>
+<!-- 个人资料头部（重叠在背景上） -->
+<div class="px-6 -mt-14 relative z-10">
+<div class="flex items-end gap-4">
+<div class="w-16 h-16 rounded-full border-2 border-white shadow-md overflow-hidden flex-shrink-0 bg-white">
+<img alt="User profile avatar" class="w-full h-full rounded-full object-cover" src="https://modao.cc/agent-py/media/generated_images/2026-06-01/2ea4e6cf52594ee6976fa7c1bf3dde53.jpg"/>
+</div>
+<div class="pb-1 flex-1">
+<div class="flex items-center gap-2">
+<h2 class="text-lg font-bold text-[#2D3436]">林小健</h2>
+<span class="text-[10px] px-2 py-0.5 bg-[#4ECDC4] text-white rounded-full font-medium">Lv.3</span>
+</div>
+<p class="text-xs text-gray-400 mt-0.5">自律给我自由 🌟</p>
+</div>
+</div>
+</div>
+<!-- 数据统计区 3x2 -->
+<div class="px-6 mt-5">
+<div class="grid grid-cols-3 gap-3">
+<div class="bg-white rounded-xl linear-border shadow-sm p-3 text-center card-hover">
+<p class="text-lg font-bold text-[#4ECDC4]">7</p>
+<p class="text-[9px] text-gray-400 mt-0.5">连续打卡(天)</p>
+</div>
+<div class="bg-white rounded-xl linear-border shadow-sm p-3 text-center card-hover">
+<p class="text-lg font-bold text-[#4ECDC4]">28</p>
+<p class="text-[9px] text-gray-400 mt-0.5">累计打卡(天)</p>
+</div>
+<div class="bg-white rounded-xl linear-border shadow-sm p-3 text-center card-hover">
+<p class="text-lg font-bold text-[#4ECDC4]">15</p>
+<p class="text-[9px] text-gray-400 mt-0.5">发布帖子</p>
+</div>
+<div class="bg-white rounded-xl linear-border shadow-sm p-3 text-center card-hover">
+<p class="text-lg font-bold text-[#FF9800]">126</p>
+<p class="text-[9px] text-gray-400 mt-0.5">获得点赞</p>
+</div>
+<div class="bg-white rounded-xl linear-border shadow-sm p-3 text-center card-hover">
+<p class="text-lg font-bold text-[#42A5F5]">38</p>
+<p class="text-[9px] text-gray-400 mt-0.5">粉丝</p>
+</div>
+<div class="bg-white rounded-xl linear-border shadow-sm p-3 text-center card-hover">
+<p class="text-lg font-bold text-[#AB47BC]">22</p>
+<p class="text-[9px] text-gray-400 mt-0.5">关注</p>
+</div>
+</div>
+</div>
+<!-- 成就勋章墙 -->
+<div class="px-6 mt-5">
+<div class="flex justify-between items-center mb-3">
+<h3 class="text-sm font-semibold text-[#2D3436]">我的勋章</h3>
+<span class="text-[10px] text-[#4ECDC4] font-medium flex items-center gap-1">查看全部 <iconify-icon icon="ph:caret-right" width="12"></iconify-icon></span>
+</div>
+<div class="bg-white rounded-xl linear-border shadow-sm p-4">
+<div class="flex justify-around">
+<div class="flex flex-col items-center gap-1.5">
+<div class="w-12 h-12 rounded-full flex items-center justify-center text-xl shadow-sm" style="background: linear-gradient(135deg, #FFD700, #FFA000);">🥇</div>
+<span class="text-[9px] text-gray-500">早起达人</span>
+</div>
+<div class="flex flex-col items-center gap-1.5">
+<div class="w-12 h-12 rounded-full flex items-center justify-center text-xl shadow-sm" style="background: linear-gradient(135deg, #E0E0E0, #BDBDBD);">🥈</div>
+<span class="text-[9px] text-gray-500">打卡之星</span>
+</div>
+<div class="flex flex-col items-center gap-1.5">
+<div class="w-12 h-12 rounded-full flex items-center justify-center text-xl shadow-sm" style="background: linear-gradient(135deg, #4ECDC4, #26A69A);">🏃</div>
+<span class="text-[9px] text-gray-500">运动先锋</span>
+</div>
+<div class="flex flex-col items-center gap-1.5">
+<div class="w-12 h-12 rounded-full flex items-center justify-center text-xl shadow-sm" style="background: linear-gradient(135deg, #81C784, #43A047);">🥗</div>
+<span class="text-[9px] text-gray-500">轻食达人</span>
+</div>
+<div class="flex flex-col items-center gap-1.5">
+<div class="w-12 h-12 rounded-full flex items-center justify-center text-xl shadow-sm" style="background: linear-gradient(135deg, #CE93D8, #8E24AA);">💪</div>
+<span class="text-[9px] text-gray-500">自律王者</span>
+</div>
+</div>
+</div>
+</div>
+<!-- 我的动态 -->
+<div class="px-6 mt-5">
+<div class="flex justify-between items-center mb-3">
+<h3 class="text-sm font-semibold text-[#2D3436]">我的动态</h3>
+<span class="text-[10px] text-[#4ECDC4] font-medium flex items-center gap-1">查看全部 <iconify-icon icon="ph:caret-right" width="12"></iconify-icon></span>
+</div>
+<div class="space-y-3">
+<div class="bg-white rounded-xl linear-border shadow-sm p-3.5 card-hover">
+<p class="text-xs text-gray-600 leading-relaxed">今日早餐打卡！燕麦+蓝莓+鸡蛋 🥣</p>
+<div class="flex items-center justify-between mt-2">
+<span class="text-[10px] text-gray-400">5分钟前</span>
+<span class="text-[10px] text-gray-400 flex items-center gap-1">❤️ 12</span>
+</div>
+</div>
+<div class="bg-white rounded-xl linear-border shadow-sm p-3.5 card-hover">
+<p class="text-xs text-gray-600 leading-relaxed">分享一个低卡食谱，厨房小白也能做~</p>
+<div class="flex items-center justify-between mt-2">
+<span class="text-[10px] text-gray-400">2小时前</span>
+<span class="text-[10px] text-gray-400 flex items-center gap-1">❤️ 8</span>
+</div>
+</div>
+<div class="bg-white rounded-xl linear-border shadow-sm p-3.5 card-hover">
+<p class="text-xs text-gray-600 leading-relaxed">本周已连续打卡7天！继续坚持 💪</p>
+<div class="flex items-center justify-between mt-2">
+<span class="text-[10px] text-gray-400">昨天 22:30</span>
+<span class="text-[10px] text-gray-400 flex items-center gap-1">❤️ 15</span>
+</div>
+</div>
+</div>
+</div>
+<!-- 功能列表 -->
+<div class="px-6 mt-5">
+<div class="bg-white rounded-xl linear-border shadow-sm overflow-hidden">
+<div class="flex items-center justify-between p-4 border-b border-[#E8ECF0] active:bg-gray-50 cursor-pointer hover:bg-gray-50 transition-colors">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-[#FFEBEE] flex items-center justify-center text-base">📖</div>
+<span class="text-sm text-[#2D3436]">我的收藏</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-[10px] w-5 h-5 rounded-full bg-[#4ECDC4] text-white flex items-center justify-center font-medium">23</span>
+<iconify-icon class="text-gray-300" icon="ph:caret-right"></iconify-icon>
+</div>
+</div>
+<div class="flex items-center justify-between p-4 border-b border-[#E8ECF0] active:bg-gray-50 cursor-pointer hover:bg-gray-50 transition-colors">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-[#E3F2FD] flex items-center justify-center text-base">📝</div>
+<span class="text-sm text-[#2D3436]">我的帖子</span>
+</div>
+<iconify-icon class="text-gray-300" icon="ph:caret-right"></iconify-icon>
+</div>
+<div class="flex items-center justify-between p-4 border-b border-[#E8ECF0] active:bg-gray-50 cursor-pointer hover:bg-gray-50 transition-colors">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-[#FFF3E0] flex items-center justify-center text-base">💬</div>
+<span class="text-sm text-[#2D3436]">我的评论</span>
+</div>
+<iconify-icon class="text-gray-300" icon="ph:caret-right"></iconify-icon>
+</div>
+<div class="flex items-center justify-between p-4 border-b border-[#E8ECF0] active:bg-gray-50 cursor-pointer hover:bg-gray-50 transition-colors">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-[#FFEBEE] flex items-center justify-center text-base">❤️</div>
+<span class="text-sm text-[#2D3436]">我的点赞</span>
+</div>
+<iconify-icon class="text-gray-300" icon="ph:caret-right"></iconify-icon>
+</div>
+<div class="flex items-center justify-between p-4 border-b border-[#E8ECF0] active:bg-gray-50 cursor-pointer hover:bg-gray-50 transition-colors">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-[#E8F8F5] flex items-center justify-center text-base">🏆</div>
+<span class="text-sm text-[#2D3436]">成就勋章</span>
+</div>
+<iconify-icon class="text-gray-300" icon="ph:caret-right"></iconify-icon>
+</div>
+<div class="flex items-center justify-between p-4 border-b border-[#E8ECF0] active:bg-gray-50 cursor-pointer hover:bg-gray-50 transition-colors">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-[#F3E5F5] flex items-center justify-center text-base">📊</div>
+<span class="text-sm text-[#2D3436]">数据报告</span>
+</div>
+<iconify-icon class="text-gray-300" icon="ph:caret-right"></iconify-icon>
+</div>
+<div class="flex items-center justify-between p-4 border-b border-[#E8ECF0] active:bg-gray-50 cursor-pointer hover:bg-gray-50 transition-colors">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-[#ECEFF1] flex items-center justify-center text-base">⚙️</div>
+<span class="text-sm text-[#2D3436]">设置</span>
+</div>
+<iconify-icon class="text-gray-300" icon="ph:caret-right"></iconify-icon>
+</div>
+<div class="flex items-center justify-between p-4 active:bg-gray-50 cursor-pointer hover:bg-gray-50 transition-colors">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-[#E8F8F5] flex items-center justify-center text-base">ℹ️</div>
+<span class="text-sm text-[#2D3436]">关于我们</span>
+</div>
+<iconify-icon class="text-gray-300" icon="ph:caret-right"></iconify-icon>
+</div>
+</div>
+</div>
+<!-- 退出登录 -->
+<div class="px-6 mt-7 mb-6">
+<button class="w-full py-3 text-center text-sm text-gray-400 font-medium rounded-xl hover:bg-gray-100 transition-colors">退出登录</button>
+<p class="text-center text-[9px] text-gray-300 mt-5">健康生活 v2.0.0</p>
+</div>
+</div>
+<!-- ==================== 6. 社区互动页 ==================== -->
+<div class="page-node animate-fade-in" id="page-community">
+<header class="px-6 py-4 bg-white sticky top-0 z-10 border-b border-[#E8ECF0] flex justify-between items-center">
+<h1 class="text-xl font-semibold text-[#2D3436]">社区</h1>
+<button class="w-9 h-9 flex items-center justify-center rounded-full bg-[#E8F8F5] text-[#4ECDC4] hover:bg-[#4ECDC4] hover:text-white transition-all duration-200 shadow-sm active:scale-95" onclick="showPublishModal()">
+<iconify-icon icon="ph:plus-light" width="20"></iconify-icon>
+</button>
+</header>
+<div class="px-6 pt-3">
+<!-- 分类Tab横向滚动 -->
+<div class="flex gap-2.5 overflow-x-auto pb-3 no-scrollbar" id="community-categories">
+<span class="px-4 py-1.5 rounded-full text-xs bg-[#4ECDC4] text-white border border-[#4ECDC4] whitespace-nowrap font-medium cursor-pointer category-chip active" data-cat="recommend" onclick="switchCommunityCat(this)">推荐</span>
+<span class="px-4 py-1.5 rounded-full text-xs bg-white text-gray-500 linear-border whitespace-nowrap cursor-pointer category-chip hover:border-[#4ECDC4] hover:text-[#4ECDC4] transition-colors" data-cat="follow" onclick="switchCommunityCat(this)">关注</span>
+<span class="px-4 py-1.5 rounded-full text-xs bg-white text-gray-500 linear-border whitespace-nowrap cursor-pointer category-chip hover:border-[#4ECDC4] hover:text-[#4ECDC4] transition-colors" data-cat="hot" onclick="switchCommunityCat(this)">热门</span>
+<span class="px-4 py-1.5 rounded-full text-xs bg-white text-gray-500 linear-border whitespace-nowrap cursor-pointer category-chip hover:border-[#4ECDC4] hover:text-[#4ECDC4] transition-colors" data-cat="latest" onclick="switchCommunityCat(this)">最新</span>
+</div>
+<!-- Feed流 -->
+<div class="space-y-4 pb-4" id="community-feed"></div>
+</div>
+</div>
+<!-- ==================== 7. 社区 - 发布动态弹窗 ==================== -->
+<div class="fixed inset-0 z-50 flex items-end justify-center opacity-0 pointer-events-none transition-opacity duration-200" id="publish-overlay" onclick="hidePublishModal(event)">
+<div class="absolute inset-0 bg-black/30"></div>
+<div class="relative w-[375px] bg-white rounded-t-2xl shadow-xl p-6 translate-y-full transition-transform duration-300" id="publish-modal">
+<div class="flex justify-between items-center mb-5">
+<h3 class="text-base font-semibold text-[#2D3436]">发布动态</h3>
+<button class="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors" onclick="hidePublishModal()">
+<iconify-icon class="text-gray-400" icon="ph:x-light" width="18"></iconify-icon>
+</button>
+</div>
+<textarea class="w-full h-28 px-4 py-3 rounded-xl linear-border text-sm text-[#2D3436] resize-none focus:outline-none focus:border-[#4ECDC4] focus:ring-1 focus:ring-[#4ECDC4] transition-colors placeholder:text-gray-300" id="post-text" placeholder="分享你的健康生活..."></textarea>
+<div class="flex items-center gap-3 mt-4">
+<button class="w-14 h-14 rounded-xl linear-border flex flex-col items-center justify-center text-gray-400 hover:border-[#4ECDC4] hover:text-[#4ECDC4] transition-colors">
+<iconify-icon icon="ph:image-light" width="22"></iconify-icon>
+<span class="text-[8px] mt-0.5">添加图片</span>
+</button>
+<button class="w-14 h-14 rounded-xl linear-border flex flex-col items-center justify-center text-gray-400 hover:border-[#4ECDC4] hover:text-[#4ECDC4] transition-colors">
+<iconify-icon icon="ph:hash-light" width="22"></iconify-icon>
+<span class="text-[8px] mt-0.5">话题标签</span>
+</button>
+</div>
+<div class="flex gap-3 mt-5">
+<button class="flex-1 py-2.5 rounded-lg linear-border text-sm text-gray-500 font-medium hover:bg-gray-50 transition-colors" onclick="hidePublishModal()">取消</button>
+<button class="flex-1 py-2.5 bg-[#4ECDC4] text-white text-sm font-medium rounded-lg hover:bg-[#45b8b0] transition-colors active:scale-[0.98]" onclick="publishPost()">发布</button>
+</div>
+</div>
+</div>
+<!-- ==================== 8. 社区 - 评论弹窗 ==================== -->
+<div class="fixed inset-0 z-50 flex items-end justify-center opacity-0 pointer-events-none transition-opacity duration-200" id="comment-overlay" onclick="hideCommentModal(event)">
+<div class="absolute inset-0 bg-black/30"></div>
+<div class="relative w-[375px] bg-white rounded-t-2xl shadow-xl p-6 translate-y-full transition-transform duration-300" id="comment-modal">
+<div class="flex justify-between items-center mb-4">
+<h3 class="text-base font-semibold text-[#2D3436]">评论</h3>
+<button class="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors" onclick="hideCommentModal()">
+<iconify-icon class="text-gray-400" icon="ph:x-light" width="18"></iconify-icon>
+</button>
+</div>
+<div class="space-y-3 mb-4 max-h-40 overflow-y-auto" id="comment-list">
+<div class="flex gap-3">
+<div class="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 bg-gray-200">
+<img alt="Commenter avatar" class="w-full h-full object-cover" src="https://modao.cc/agent-py/media/generated_images/2026-06-01/995d3d67e49b4cba80619e85360602b9.jpg"/>
+</div>
+<div class="flex-1">
+<p class="text-xs font-medium text-[#2D3436]">小星星 <span class="text-[10px] text-gray-400 font-normal">说：</span></p>
+<p class="text-xs text-gray-500 mt-0.5">好棒呀！明天也试试这个搭配~</p>
+</div>
+</div>
+<div class="flex gap-3">
+<div class="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 bg-gray-200">
+<img alt="Commenter avatar" class="w-full h-full object-cover" src="https://modao.cc/agent-py/media/generated_images/2026-06-01/995d3d67e49b4cba80619e85360602b9.jpg"/>
+</div>
+<div class="flex-1">
+<p class="text-xs font-medium text-[#2D3436]">健康小达人 <span class="text-[10px] text-gray-400 font-normal">说：</span></p>
+<p class="text-xs text-gray-500 mt-0.5">加油，坚持就是胜利！💪</p>
+</div>
+</div>
+</div>
+<div class="flex gap-3">
+<input class="flex-1 px-4 py-2.5 rounded-lg linear-border text-sm focus:outline-none focus:border-[#4ECDC4] focus:ring-1 focus:ring-[#4ECDC4] transition-colors placeholder:text-gray-300" id="comment-input" placeholder="写评论..." type="text"/>
+<button class="px-5 py-2.5 bg-[#4ECDC4] text-white text-sm font-medium rounded-lg hover:bg-[#45b8b0] transition-colors active:scale-[0.98]" onclick="sendComment()">发送</button>
+</div>
+</div>
+</div>
+<!-- ==================== 9. 食谱详情层 (半屏弹窗) ==================== -->
+<div class="fixed inset-0 bg-black/30 z-50 transition-opacity duration-300 opacity-0 pointer-events-none" id="recipe-overlay" onclick="hideRecipeDetail()"></div>
+<div class="fixed bottom-0 left-1/2 -translate-x-1/2 w-[375px] bg-white z-50 rounded-t-2xl shadow-xl transition-all duration-400 max-h-[70vh] overflow-y-auto translate-y-full" id="recipe-detail">
+<div class="sticky top-0 bg-white pt-4 pb-2 px-6 border-b border-[#E8ECF0] flex justify-between items-center z-10">
+<div></div>
+<div class="w-8 h-1 bg-gray-300 rounded-full mx-auto"></div>
+<button class="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors" onclick="hideRecipeDetail()">
+<iconify-icon class="text-gray-400" icon="ph:x-light" width="18"></iconify-icon>
+</button>
+</div>
+<div class="px-6 py-4">
+<img alt="Recipe detail image" class="w-full h-48 object-cover rounded-xl" id="recipe-detail-img" src="https://modao.cc/agent-py/media/generated_images/2026-06-01/43782fd96241495eb44116c149084f73.jpg"/>
+<div class="flex justify-between items-start mt-4">
+<div>
+<h2 class="text-lg font-semibold text-[#2D3436]" id="recipe-detail-title">牛油果全麦吐司</h2>
+<div class="flex gap-4 mt-2">
+<span class="text-xs text-gray-400 flex items-center gap-1"><iconify-icon icon="ph:clock-light"></iconify-icon> <span id="recipe-detail-time">10分钟</span></span>
+<span class="text-xs text-gray-400 flex items-center gap-1"><iconify-icon icon="ph:fire-light"></iconify-icon> <span id="recipe-detail-cal">245 kcal</span></span>
+</div>
+</div>
+<button class="text-[#4ECDC4] hover:scale-110 transition-transform">
+<iconify-icon icon="ph:heart-fill" width="22"></iconify-icon>
+</button>
+</div>
+<!-- 营养成分表 -->
+<div class="mt-5 bg-[#E8F8F5] rounded-xl p-4">
+<h3 class="text-xs font-semibold text-[#2D3436] mb-3">营养成分（每份）</h3>
+<div class="grid grid-cols-4 gap-3 text-center">
+<div>
+<p class="text-base font-bold text-[#4ECDC4]">245</p>
+<p class="text-[9px] text-gray-400">热量(kcal)</p>
+</div>
+<div>
+<p class="text-base font-bold text-[#4ECDC4]">8</p>
+<p class="text-[9px] text-gray-400">蛋白质(g)</p>
+</div>
+<div>
+<p class="text-base font-bold text-[#FF9800]">22</p>
+<p class="text-[9px] text-gray-400">碳水(g)</p>
+</div>
+<div>
+<p class="text-base font-bold text-[#EF5350]">12</p>
+<p class="text-[9px] text-gray-400">脂肪(g)</p>
+</div>
+</div>
+</div>
+<!-- 食材清单 -->
+<div class="mt-5">
+<h3 class="text-sm font-semibold text-[#2D3436] mb-3">主要食材</h3>
+<div class="space-y-2" id="recipe-detail-ingredients">
+<div class="flex justify-between text-sm py-2 border-b border-[#E8ECF0]">
+<span class="text-gray-600">全麦吐司</span>
+<span class="text-gray-400">1 片</span>
+</div>
+<div class="flex justify-between text-sm py-2 border-b border-[#E8ECF0]">
+<span class="text-gray-600">熟牛油果</span>
+<span class="text-gray-400">半个</span>
+</div>
+<div class="flex justify-between text-sm py-2 border-b border-[#E8ECF0]">
+<span class="text-gray-600">黑芝麻</span>
+<span class="text-gray-400">适量</span>
+</div>
+</div>
+</div>
+<!-- 制作步骤 -->
+<div class="mt-5">
+<h3 class="text-sm font-semibold text-[#2D3436] mb-3">制作步骤</h3>
+<div class="space-y-4" id="recipe-detail-steps">
+<div class="flex gap-3">
+<span class="text-sm font-bold text-[#4ECDC4] italic w-6 flex-shrink-0">01</span>
+<p class="text-sm text-gray-600 leading-relaxed">将全麦吐司放入烤面包机，烤至两面金黄酥脆。</p>
+</div>
+<div class="flex gap-3">
+<span class="text-sm font-bold text-[#4ECDC4] italic w-6 flex-shrink-0">02</span>
+<p class="text-sm text-gray-600 leading-relaxed">牛油果切开去核，用勺子挖出果肉并压成泥状，加入少许盐和黑胡椒调味。</p>
+</div>
+<div class="flex gap-3">
+<span class="text-sm font-bold text-[#4ECDC4] italic w-6 flex-shrink-0">03</span>
+<p class="text-sm text-gray-600 leading-relaxed">将牛油果泥均匀涂抹在吐司上，撒上黑芝麻即可享用。</p>
+</div>
+</div>
+</div>
+<div class="h-6"></div>
+</div>
+</div>
+</div><!-- end content-area -->
+<!-- 底部Tab导航 -->
+<nav class="absolute bottom-0 left-0 right-0 h-20 bg-white border-t border-[#E8ECF0] flex items-center justify-around px-1 pb-2">
+<button class="flex flex-col items-center gap-1 flex-1 tab-btn tab-active" id="tab-home" onclick="switchPage('home')">
+<iconify-icon icon="ph:house-line-light" width="22"></iconify-icon>
+<span class="text-[10px] font-medium">首页</span>
+</button>
+<button class="flex flex-col items-center gap-1 flex-1 tab-btn text-gray-400" id="tab-checkin" onclick="switchPage('checkin')">
+<iconify-icon icon="ph:calendar-check-light" width="22"></iconify-icon>
+<span class="text-[10px] font-medium">打卡</span>
+</button>
+<button class="flex flex-col items-center gap-1 flex-1 tab-btn text-gray-400" id="tab-nutrition" onclick="switchPage('nutrition')">
+<iconify-icon icon="ph:leaf-light" width="22"></iconify-icon>
+<span class="text-[10px] font-medium">营养</span>
+</button>
+<button class="flex flex-col items-center gap-1 flex-1 tab-btn text-gray-400" id="tab-recipes" onclick="switchPage('recipes')">
+<iconify-icon icon="ph:cooking-pot-light" width="22"></iconify-icon>
+<span class="text-[10px] font-medium">食谱</span>
+</button>
+<button class="flex flex-col items-center gap-1 flex-1 tab-btn text-gray-400" id="tab-community" onclick="switchPage('community')">
+<svg fill="none" height="22" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewbox="0 0 24 24" width="22">
+<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+<circle cx="9" cy="7" r="4"></circle>
+<path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+<path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+</svg>
+<span class="text-[10px] font-medium">社区</span>
+</button>
+<button class="flex flex-col items-center gap-1 flex-1 tab-btn text-gray-400" id="tab-profile" onclick="switchPage('profile')">
+<iconify-icon icon="ph:user-light" width="22"></iconify-icon>
+<span class="text-[10px] font-medium">我的</span>
+</button>
+</nav>
+</div>
+<script>
+    // ===== 页面切换逻辑 =====
+    function switchPage(pageId) {
+        document.querySelectorAll('.page-node').forEach(page => {
+            page.classList.remove('active');
+        });
+
+        const targetPage = document.getElementById('page-' + pageId);
+        if (targetPage) {
+            targetPage.classList.add('active');
+            document.getElementById('main-content').scrollTop = 0;
+        }
+
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('tab-active');
+            btn.classList.add('text-gray-400');
+        });
+        const activeTab = document.getElementById('tab-' + pageId);
+        if (activeTab) {
+            activeTab.classList.add('tab-active');
+            activeTab.classList.remove('text-gray-400');
+        }
+
+        if (pageId === 'checkin') {
+            setTimeout(initCheckinChart, 100);
+        } else if (pageId === 'nutrition') {
+            setTimeout(initNutritionGauge, 100);
+        } else if (pageId === 'community') {
+            setTimeout(() => renderCommunityFeed(communityPosts), 50);
+        }
+    }
+
+    // ===== 健康打卡 - 日历日期详情 =====
+    function showDateDetail(day) {
+        const detail = document.getElementById('date-detail');
+        detail.classList.remove('hidden');
+        const hasCheckin = [1,2,4,6,10,13,16,20].includes(day);
+        if (hasCheckin) {
+            detail.innerHTML = '📅 <span class="font-medium text-[#4ECDC4]">6月' + day + '日</span> — 已完成打卡 <span class="text-[#4ECDC4]">✓</span>';
+        } else {
+            detail.innerHTML = '📅 <span class="font-medium">6月' + day + '日</span> — 暂无打卡记录';
+        }
+    }
+
+    // ===== 营养管理 - 模拟拍照识别 =====
+    function simulateCamera() {
+        const scanning = document.getElementById('camera-scanning');
+        const result = document.getElementById('ai-result');
+
+        scanning.classList.remove('hidden');
+        result.classList.add('hidden');
+
+        setTimeout(() => {
+            scanning.classList.add('hidden');
+            result.classList.remove('hidden');
+        }, 2000);
+    }
+
+    // ===== 营养管理 - 手动录入表单 =====
+    function showManualForm() {
+        document.getElementById('manual-form').classList.remove('hidden');
+    }
+
+    function hideManualForm() {
+        document.getElementById('manual-form').classList.add('hidden');
+    }
+
+    function submitFoodRecord() {
+        const name = document.getElementById('food-name').value || '未知食物';
+        const amount = document.getElementById('food-amount').value || '1 份';
+        const cal = document.getElementById('food-calories').value || '0';
+
+        const list = document.getElementById('food-records');
+        const item = document.createElement('div');
+        item.className = 'bg-white rounded-xl linear-border shadow-sm flex p-3 gap-4 card-hover animate-slide-up';
+        item.innerHTML = '<div class="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-[#E8F8F5]"><img alt="Food record: ' + name + '" class="w-full h-full object-cover" src="/agent-py/static/source/images/placeholder.svg"/></div><div class="flex-1 py-0.5"><div class="flex justify-between items-start"><h3 class="text-sm font-medium text-[#2D3436]">' + name + '</h3><span class="text-[10px] px-2 py-0.5 bg-[#E3F2FD] text-[#42A5F5] rounded font-medium">手动</span></div><p class="text-xs text-gray-400 mt-0.5">份量: ' + amount + ' · 热量: ' + cal + ' kcal</p></div>';
+        list.insertBefore(item, list.firstChild);
+
+        // 重置并隐藏表单
+        document.getElementById('food-name').value = '';
+        document.getElementById('food-amount').value = '';
+        document.getElementById('food-calories').value = '';
+        hideManualForm();
+    }
+
+    // ===== 食谱 - 详情弹窗 =====
+    const recipeData = {
+        avocado: {
+            title: '牛油果全麦吐司',
+            time: '10分钟',
+            cal: '245 kcal',
+            img: '/agent-py/static/source/images/placeholder.svg',
+            nutrition: { cal: '245', protein: '8', carb: '22', fat: '12' },
+            ingredients: [
+                ['全麦吐司', '1 片'],
+                ['熟牛油果', '半个'],
+                ['黑芝麻', '适量'],
+                ['盐', '少许'],
+                ['黑胡椒', '少许']
+            ],
+            steps: ['将全麦吐司放入烤面包机，烤至两面金黄酥脆。', '牛油果切开去核，用勺子挖出果肉并压成泥状，加入少许盐和黑胡椒调味。', '将牛油果泥均匀涂抹在吐司上，撒上黑芝麻即可享用。']
+        },
+        shrimp: {
+            title: '黎麦鲜虾沙拉',
+            time: '15分钟',
+            cal: '310 kcal',
+            img: '/agent-py/static/source/images/placeholder.svg',
+            nutrition: { cal: '310', protein: '24', carb: '18', fat: '6' },
+            ingredients: [
+                ['黎麦', '50g'],
+                ['鲜虾', '8只'],
+                ['小番茄', '6颗'],
+                ['生菜', '适量'],
+                ['柠檬汁', '1勺']
+            ],
+            steps: ['黎麦洗净，加水中火煮15分钟至熟透，沥干放凉。', '鲜虾去壳去虾线，加少许盐和黑胡椒煎至两面金黄。', '小番茄切半，生菜撕碎，与黎麦和虾混合，淋上柠檬汁和橄榄油拌匀。']
+        },
+        salmon: {
+            title: '无油香煎三文鱼',
+            time: '20分钟',
+            cal: '280 kcal',
+            img: '/agent-py/static/source/images/placeholder.svg',
+            nutrition: { cal: '280', protein: '32', carb: '4', fat: '14' },
+            ingredients: [
+                ['三文鱼', '200g'],
+                ['芦笋', '6根'],
+                ['柠檬', '半个'],
+                ['黑胡椒', '适量'],
+                ['迷迭香', '适量']
+            ],
+            steps: ['三文鱼用厨房纸吸干水分，两面均匀撒上盐、黑胡椒和迷迭香腌制10分钟。', '不粘锅大火加热，放入三文鱼（鱼皮朝下），转中火煎4分钟后翻面。', '加入芦笋同煎3分钟，挤上柠檬汁即可出锅。']
+        },
+        yogurt: {
+            title: '希腊酸奶水果碗',
+            time: '5分钟',
+            cal: '185 kcal',
+            img: '/agent-py/static/source/images/placeholder.svg',
+            nutrition: { cal: '185', protein: '12', carb: '28', fat: '3' },
+            ingredients: [
+                ['希腊酸奶', '150g'],
+                ['蓝莓', '30g'],
+                ['草莓', '3颗'],
+                ['香蕉', '半根'],
+                ['格兰诺拉', '20g']
+            ],
+            steps: ['希腊酸奶倒入碗中，用勺子抹平。', '蓝莓、草莓洗净，香蕉切片，依次摆放在酸奶上。', '撒上格兰诺拉麦片，淋上少许蜂蜜即可。']
+        },
+        oat: {
+            title: '燕麦蓝莓松饼',
+            time: '25分钟',
+            cal: '220 kcal',
+            img: '/agent-py/static/source/images/placeholder.svg',
+            nutrition: { cal: '220', protein: '7', carb: '35', fat: '6' },
+            ingredients: [
+                ['燕麦片', '80g'],
+                ['蓝莓', '40g'],
+                ['鸡蛋', '1个'],
+                ['牛奶', '100ml'],
+                ['蜂蜜', '1勺']
+            ],
+            steps: ['燕麦片用料理机打成粉备用。', '鸡蛋打散，加入牛奶和蜂蜜搅拌均匀，倒入燕麦粉搅拌成糊。', '面糊中加入蓝莓轻轻拌匀，倒入模具，烤箱180度烤18分钟。']
+        },
+        papaya: {
+            title: '泰式青木瓜沙拉',
+            time: '15分钟',
+            cal: '120 kcal',
+            img: '/agent-py/static/source/images/placeholder.svg',
+            nutrition: { cal: '120', protein: '3', carb: '22', fat: '2' },
+            ingredients: [
+                ['青木瓜', '半个'],
+                ['胡萝卜', '半根'],
+                ['花生碎', '10g'],
+                ['青柠', '1个'],
+                ['鱼露', '1勺']
+            ],
+            steps: ['青木瓜和胡萝卜去皮刨成细丝，放入冰水中浸泡5分钟使其爽脆。', '调汁：青柠汁、鱼露、少许糖和小米辣混合搅拌均匀。', '木瓜丝沥干水分，倒入调汁拌匀，撒上花生碎即可。']
+        }
+    };
+
+    function showRecipeDetail(id) {
+        const data = recipeData[id] || recipeData.avocado;
+
+        document.getElementById('recipe-detail-title').textContent = data.title;
+        document.getElementById('recipe-detail-time').textContent = data.time;
+        document.getElementById('recipe-detail-cal').textContent = data.cal;
+        document.getElementById('recipe-detail-img').src = data.img;
+        document.getElementById('recipe-detail-img').alt = 'Recipe detail: ' + data.title;
+
+        // 营养成分
+        const nut = data.nutrition;
+        const nutDivs = document.querySelectorAll('#recipe-detail .grid-cols-4 div');
+        if (nutDivs.length >= 4) {
+            nutDivs[0].querySelector('p:first-child').textContent = nut.cal;
+            nutDivs[1].querySelector('p:first-child').textContent = nut.protein;
+            nutDivs[2].querySelector('p:first-child').textContent = nut.carb;
+            nutDivs[3].querySelector('p:first-child').textContent = nut.fat;
+        }
+
+        // 食材
+        const ingredientsDiv = document.getElementById('recipe-detail-ingredients');
+        ingredientsDiv.innerHTML = data.ingredients.map(item =>
+            '<div class="flex justify-between text-sm py-2 border-b border-[#E8ECF0]">' +
+            '<span class="text-gray-600">' + item[0] + '</span>' +
+            '<span class="text-gray-400">' + item[1] + '</span>' +
+            '</div>'
+        ).join('');
+
+        // 步骤
+        const stepsDiv = document.getElementById('recipe-detail-steps');
+        stepsDiv.innerHTML = data.steps.map((step, i) =>
+            '<div class="flex gap-3">' +
+            '<span class="text-sm font-bold text-[#4ECDC4] italic w-6 flex-shrink-0">' +
+            String(i + 1).padStart(2, '0') +
+            '</span>' +
+            '<p class="text-sm text-gray-600 leading-relaxed">' + step + '</p>' +
+            '</div>'
+        ).join('');
+
+        // 显示弹窗
+        document.getElementById('recipe-detail').classList.remove('translate-y-full');
+        document.getElementById('recipe-overlay').classList.remove('opacity-0', 'pointer-events-none');
+    }
+
+    function hideRecipeDetail() {
+        document.getElementById('recipe-detail').classList.add('translate-y-full');
+        document.getElementById('recipe-overlay').classList.add('opacity-0', 'pointer-events-none');
+    }
+
+    // ===== 初始化打卡趋势图 =====
+    function initCheckinChart() {
+        const chartDom = document.getElementById('checkin-chart');
+        if (!chartDom) return;
+        const myChart = echarts.init(chartDom);
+        const option = {
+            grid: { left: '8%', right: '8%', top: '12%', bottom: '12%' },
+            xAxis: {
+                type: 'category',
+                data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
+                axisLine: { show: false },
+                axisTick: { show: false },
+                axisLabel: { color: '#999', fontSize: 10 }
+            },
+            yAxis: {
+                type: 'value',
+                show: false,
+                min: 0,
+                max: 7
+            },
+            series: [{
+                data: [5, 6, 3, 7, 5, 6, 4],
+                type: 'bar',
+                barWidth: '32%',
+                itemStyle: {
+                    color: function(params) {
+                        const colors = ['#4ECDC4', '#4ECDC4', '#B2DFDB', '#4ECDC4', '#4ECDC4', '#4ECDC4', '#80CBC4'];
+                        return colors[params.dataIndex];
+                    },
+                    borderRadius: [6, 6, 0, 0]
+                },
+                label: {
+                    show: true,
+                    position: 'top',
+                    color: '#999',
+                    fontSize: 9,
+                    formatter: function(params) { return params.value + '项'; }
+                }
+            }]
+        };
+        myChart.setOption(option);
+    }
+
+    // ===== 初始化热量仪表盘 =====
+    function initNutritionGauge() {
+        const chartDom = document.getElementById('calories-gauge');
+        if (!chartDom) return;
+        const myChart = echarts.init(chartDom);
+        const option = {
+            series: [{
+                type: 'gauge',
+                startAngle: 90,
+                endAngle: -270,
+                pointer: { show: false },
+                progress: {
+                    show: true,
+                    overlap: false,
+                    roundCap: true,
+                    clip: false,
+                    itemStyle: { color: '#4ECDC4' }
+                },
+                axisLine: { lineStyle: { width: 5, color: [[1, '#E8ECF0']] } },
+                splitLine: { show: false },
+                axisTick: { show: false },
+                axisLabel: { show: false },
+                data: [{ value: 69 }],
+                detail: { show: false }
+            }]
+        };
+        myChart.setOption(option);
+    }
+
+    // ===== 社区 - 模拟数据 =====
+    const communityPosts = [
+        {
+            id: 1, type: 'checkin',
+            user: { name: '健康小达人', avatar: '/agent-py/static/source/images/placeholder.svg' },
+            time: '2分钟前', followed: false,
+            content: '今日早餐打卡！燕麦+蓝莓+鸡蛋，完美搭配 😊 坚持健康饮食第28天，感觉皮肤都变好了～',
+            images: ['饮食打卡图 - 燕麦蓝莓早餐'],
+            likes: 24, liked: false, comments: 6,
+            tags: ['#健康打卡', '#早餐']
+        },
+        {
+            id: 2, type: 'recipe',
+            user: { name: '轻食料理家', avatar: '/agent-py/static/source/images/placeholder.svg' },
+            time: '15分钟前', followed: true,
+            content: '分享一个低卡减脂餐，厨房小白也能做！鸡胸肉切块腌制15分钟，少油煎至两面金黄，搭配焯水西兰花和玉米粒，撒上黑胡椒即可～热量仅320kcal！',
+            images: ['减脂餐展示图 - 鸡胸肉西兰花', '步骤图 - 腌制鸡肉'],
+            likes: 58, liked: false, comments: 12,
+            tags: ['#低卡食谱', '#减脂餐']
+        },
+        {
+            id: 3, type: 'foodlog',
+            user: { name: '沙拉控小美', avatar: '/agent-py/static/source/images/placeholder.svg' },
+            time: '32分钟前', followed: false,
+            content: '午餐打卡🍽️ 轻食沙拉 bowl 配油醋汁，热量控制完美～这份大概380kcal，蔬菜多多，饱腹感超强！',
+            images: ['午餐打卡 - 轻食沙拉碗'],
+            likes: 31, liked: false, comments: 4,
+            tags: ['#饮食记录', '#轻食']
+        },
+        {
+            id: 4, type: 'topic',
+            user: { name: '喝水小队长', avatar: '/agent-py/static/source/images/placeholder.svg' },
+            time: '1小时前', followed: false,
+            content: '大家每天喝几杯水呀？我的目标是8杯💪 今天已经喝了5杯了，还差3杯！一起组队喝水吧～',
+            images: [],
+            likes: 67, liked: true, comments: 23,
+            tags: ['#互动话题', '#饮水打卡']
+        },
+        {
+            id: 5, type: 'checkin',
+            user: { name: '元气少女', avatar: '/agent-py/static/source/images/placeholder.svg' },
+            time: '2小时前', followed: true,
+            content: '晨跑5公里打卡🏃‍♀️ 今天空气质量优，公园里的樱花都开了，跑起来特别舒服～配速6分半，比上周快了15秒！',
+            images: ['跑步打卡图 - 公园晨跑', '配速数据截图'],
+            likes: 42, liked: false, comments: 8,
+            tags: ['#健康打卡', '#跑步']
+        },
+        {
+            id: 6, type: 'recipe',
+            user: { name: '低卡甜品师', avatar: '/agent-py/static/source/images/placeholder.svg' },
+            time: '3小时前', followed: false,
+            content: '无糖希腊酸奶慕斯，热量只有普通甜品的1/3！希腊酸奶+吉利丁+代糖，冷藏4小时就能吃，配上新鲜草莓绝了🍓',
+            images: ['甜品展示图 - 酸奶慕斯', '制作步骤图', '成品细节图'],
+            likes: 89, liked: false, comments: 15,
+            tags: ['#低卡食谱', '#健康甜品']
+        },
+        {
+            id: 7, type: 'foodlog',
+            user: { name: '营养师小林', avatar: '/agent-py/static/source/images/placeholder.svg' },
+            time: '4小时前', followed: true,
+            content: '今日营养小课堂📖 蛋白质摄入小贴士：每公斤体重建议摄入1.2-1.5g蛋白质，训练日可增加到1.8g。鸡胸肉、鱼虾、豆制品都是优质来源！',
+            images: ['营养知识图解'],
+            likes: 103, liked: false, comments: 19,
+            tags: ['#饮食记录', '#营养知识']
+        },
+        {
+            id: 8, type: 'topic',
+            user: { name: '周末厨师', avatar: '/agent-py/static/source/images/placeholder.svg' },
+            time: '5小时前', followed: false,
+            content: '周末挑战做了一道全麦蔬食披萨🍕 饼底用全麦粉+酵母发酵，配料放了彩椒、蘑菇、玉米、橄榄，撒上低脂芝士～热量控制在一人份450kcal，超满足！',
+            images: ['全麦披萨成品图', '食材准备图'],
+            likes: 76, liked: false, comments: 11,
+            tags: ['#互动话题', '#减脂餐']
+        },
+        {
+            id: 9, type: 'checkin',
+            user: { name: '早睡打卡君', avatar: '/agent-py/static/source/images/placeholder.svg' },
+            time: '6小时前', followed: false,
+            content: '昨天晚上22:30准时上床，今天精神特别好！早睡真的比任何护肤品都管用✨ 今晚继续挑战22:00前关机📱',
+            images: [],
+            likes: 55, liked: false, comments: 7,
+            tags: ['#健康打卡', '#早睡']
+        },
+        {
+            id: 10, type: 'recipe',
+            user: { name: '果蔬达人', avatar: '/agent-py/static/source/images/placeholder.svg' },
+            time: '8小时前', followed: true,
+            content: '夏日特饮推荐：黄瓜+芹菜+苹果+生姜榨汁，排毒消肿效果超赞！口感清爽，加点薄荷叶更好喝🍃 热量才60kcal一杯～',
+            images: ['果蔬汁成品图', '食材准备图'],
+            likes: 38, liked: false, comments: 5,
+            tags: ['#低卡食谱', '#健康饮品']
+        }
+    ];
+
+    // ===== 社区 - 渲染Feed流 =====
+    function renderCommunityFeed(posts) {
+        const feed = document.getElementById('community-feed');
+        feed.innerHTML = posts.map(post => {
+            const imagesHtml = post.images.length > 0
+                ? `<div class="grid ${post.images.length === 1 ? 'grid-cols-1' : post.images.length === 2 ? 'grid-cols-2' : 'grid-cols-3'} gap-2 mt-3">
+                    ${post.images.map((img, i) => `
+                        <div class="feed-img-placeholder aspect-square ${post.images.length === 1 ? 'h-40' : ''} overflow-hidden">
+                            <span class="text-center px-1 leading-tight">${img}</span>
+                        </div>
+                    `).join('')}
+                </div>`
+                : '';
+
+            const nutritionCard = post.type === 'foodlog' && post.id === 3
+                ? `<div class="mt-3 bg-[#E8F8F5] rounded-lg px-3 py-2 flex items-center gap-4">
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-[10px] text-gray-400">🔥</span>
+                        <span class="text-xs font-medium text-[#2D3436]">380 kcal</span>
+                    </div>
+                    <div class="w-[1px] h-4 bg-[#d0e6e0]"></div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-[10px] text-gray-400">🥩</span>
+                        <span class="text-xs text-gray-500">蛋 18g</span>
+                    </div>
+                    <div class="w-[1px] h-4 bg-[#d0e6e0]"></div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-[10px] text-gray-400">🌾</span>
+                        <span class="text-xs text-gray-500">碳 32g</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-[10px] text-gray-400">🧈</span>
+                        <span class="text-xs text-gray-500">脂 12g</span>
+                    </div>
+                </div>`
+                : '';
+
+            const tagsHtml = post.tags.length > 0
+                ? `<div class="flex flex-wrap gap-1.5 mt-2.5">
+                    ${post.tags.map(tag => `<span class="text-[10px] text-[#4ECDC4] bg-[#E8F8F5] px-2 py-0.5 rounded-full">${tag}</span>`).join('')}
+                </div>`
+                : '';
+
+            const likeIcon = post.liked ? 'ph:heart-fill' : 'ph:heart-light';
+            const likeColor = post.liked ? 'text-[#EF5350]' : 'text-gray-400';
+
+            return `
+                <div class="bg-white rounded-xl linear-border shadow-sm p-4 feed-card" data-post-id="${post.id}">
+                    <!-- 用户信息行 -->
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-gray-200">
+                                <img alt="${post.user.name}'s avatar" class="w-full h-full object-cover" src="${post.user.avatar}"/>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-[#2D3436]">${post.user.name}</p>
+                                <p class="text-[10px] text-gray-400">${post.time}</p>
+                            </div>
+                        </div>
+                        <button class="text-[10px] px-3 py-1 rounded-full border ${post.followed ? 'bg-[#E8F8F5] text-[#4ECDC4] border-[#4ECDC4]' : 'text-gray-400 linear-border'} font-medium hover:border-[#4ECDC4] hover:text-[#4ECDC4] transition-colors" onclick="toggleFollow(this, ${post.id})">
+                            ${post.followed ? '已关注' : '+ 关注'}
+                        </button>
+                    </div>
+                    <!-- 动态内容 -->
+                    <p class="text-sm text-gray-600 leading-relaxed mt-3">${post.content}</p>
+                    <!-- 图片区 -->
+                    ${imagesHtml}
+                    <!-- 营养数据小卡片 -->
+                    ${nutritionCard}
+                    <!-- 标签 -->
+                    ${tagsHtml}
+                    <!-- 互动区 -->
+                    <div class="flex items-center justify-between mt-3 pt-3 border-t border-[#E8ECF0]">
+                        <button class="flex items-center gap-1.5 ${likeColor} hover:text-[#EF5350] transition-colors" onclick="toggleLike(this, ${post.id})">
+                            <iconify-icon icon="${likeIcon}" width="18"></iconify-icon>
+                            <span class="text-xs">${post.likes}</span>
+                        </button>
+                        <button class="flex items-center gap-1.5 text-gray-400 hover:text-[#4ECDC4] transition-colors" onclick="showCommentModal(${post.id})">
+                            <iconify-icon icon="ph:chat-circle-light" width="18"></iconify-icon>
+                            <span class="text-xs">${post.comments}</span>
+                        </button>
+                        <button class="flex items-center gap-1.5 text-gray-400 hover:text-[#4ECDC4] transition-colors">
+                            <iconify-icon icon="ph:share-fat-light" width="18"></iconify-icon>
+                            <span class="text-xs">转发</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // ===== 社区 - 分类切换 =====
+    function switchCommunityCat(el) {
+        document.querySelectorAll('.category-chip').forEach(c => c.classList.remove('active'));
+        el.classList.add('active');
+        // 模拟分类过滤效果
+        renderCommunityFeed(communityPosts);
+    }
+
+    // ===== 社区 - 关注切换 =====
+    function toggleFollow(btn, postId) {
+        const post = communityPosts.find(p => p.id === postId);
+        if (post) {
+            post.followed = !post.followed;
+            if (post.followed) {
+                btn.classList.remove('text-gray-400', 'linear-border');
+                btn.classList.add('bg-[#E8F8F5]', 'text-[#4ECDC4]', 'border-[#4ECDC4]');
+                btn.textContent = '已关注';
+            } else {
+                btn.classList.remove('bg-[#E8F8F5]', 'text-[#4ECDC4]', 'border-[#4ECDC4]');
+                btn.classList.add('text-gray-400', 'linear-border');
+                btn.textContent = '+ 关注';
+            }
+        }
+    }
+
+    // ===== 社区 - 点赞切换 =====
+    function toggleLike(btn, postId) {
+        const post = communityPosts.find(p => p.id === postId);
+        if (!post) return;
+        post.liked = !post.liked;
+        post.likes += post.liked ? 1 : -1;
+        const icon = btn.querySelector('iconify-icon');
+        icon.setAttribute('icon', post.liked ? 'ph:heart-fill' : 'ph:heart-light');
+        btn.classList.toggle('text-[#EF5350]', post.liked);
+        btn.classList.toggle('text-gray-400', !post.liked);
+        btn.querySelector('span').textContent = post.likes;
+        btn.classList.add('like-anim');
+        setTimeout(() => btn.classList.remove('like-anim'), 300);
+    }
+
+    // ===== 社区 - 发布动态弹窗 =====
+    function showPublishModal() {
+        document.getElementById('publish-overlay').classList.remove('opacity-0', 'pointer-events-none');
+        document.getElementById('publish-modal').classList.remove('translate-y-full');
+    }
+
+    function hidePublishModal(e) {
+        if (e && e.target !== e.currentTarget) return;
+        document.getElementById('publish-modal').classList.add('translate-y-full');
+        setTimeout(() => {
+            document.getElementById('publish-overlay').classList.add('opacity-0', 'pointer-events-none');
+        }, 250);
+    }
+
+    function publishPost() {
+        const text = document.getElementById('post-text').value.trim();
+        if (!text) {
+            document.getElementById('post-text').focus();
+            return;
+        }
+        const newPost = {
+            id: Date.now(),
+            type: 'topic',
+            user: { name: '林小健', avatar: '/agent-py/static/source/images/placeholder.svg' },
+            time: '刚刚',
+            followed: false,
+            content: text,
+            images: [],
+            likes: 0,
+            liked: false,
+            comments: 0,
+            tags: ['#互动话题']
+        };
+        communityPosts.unshift(newPost);
+        renderCommunityFeed(communityPosts);
+        document.getElementById('post-text').value = '';
+        hidePublishModal({ target: document.getElementById('publish-overlay'), currentTarget: document.getElementById('publish-overlay') });
+        // 自动切换到社区页
+        switchPage('community');
+    }
+
+    // ===== 社区 - 评论弹窗 =====
+    function showCommentModal(postId) {
+        document.getElementById('comment-overlay').classList.remove('opacity-0', 'pointer-events-none');
+        document.getElementById('comment-modal').classList.remove('translate-y-full');
+        document.getElementById('comment-input').value = '';
+        document.getElementById('comment-input').dataset.postId = postId;
+    }
+
+    function hideCommentModal(e) {
+        if (e && e.target !== e.currentTarget) return;
+        document.getElementById('comment-modal').classList.add('translate-y-full');
+        setTimeout(() => {
+            document.getElementById('comment-overlay').classList.add('opacity-0', 'pointer-events-none');
+        }, 250);
+    }
+
+    function sendComment() {
+        const input = document.getElementById('comment-input');
+        const text = input.value.trim();
+        if (!text) return;
+        const list = document.getElementById('comment-list');
+        const item = document.createElement('div');
+        item.className = 'flex gap-3 animate-slide-up';
+        item.innerHTML = `
+            <div class="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 bg-gray-200">
+                <img alt="My avatar" class="w-full h-full object-cover" src="/agent-py/static/source/images/placeholder.svg"/>
+            </div>
+            <div class="flex-1">
+                <p class="text-xs font-medium text-[#2D3436]">林小健 <span class="text-[10px] text-gray-400 font-normal">说：</span></p>
+                <p class="text-xs text-gray-500 mt-0.5">${text}</p>
+            </div>
+        `;
+        list.appendChild(item);
+        list.scrollTop = list.scrollHeight;
+        input.value = '';
+        // 更新评论数
+        const postId = parseInt(input.dataset.postId);
+        const post = communityPosts.find(p => p.id === postId);
+        if (post) {
+            post.comments += 1;
+            renderCommunityFeed(communityPosts);
+        }
+    }
+
+    // ===== 社区 - 初始化（加载到switchPage时触发） =====
+</script>
+</body>
+</html>
